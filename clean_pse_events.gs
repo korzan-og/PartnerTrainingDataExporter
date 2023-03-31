@@ -1,7 +1,6 @@
-function updateTargetDocument_elena () {
-  const targetDocumentId = "1prAMKf3J2sCjN_mPsR0KTubyEpQnM3EsFJYlcoCJV6o";
-  const targetSheetName = "sessions";
-  const targetCountryColumn = "Country/Region Name";
+function updateTargetDocument_pse() {
+  const targetDocumentId = "1YZTiXM1FWaM5bWCDa2yNQKUJYOsLgsc1AkS_blzoX1I";
+  const targetCountryColumn = "Country (text only)";
   const targetColumnToUpdate = "company_std";
   const targetEmailColumn = "Email";
 
@@ -12,49 +11,48 @@ function updateTargetDocument_elena () {
   const externalEmailPatternColumn = "Email_pattern";
 
   const targetDoc = SpreadsheetApp.openById(targetDocumentId);
-  const targetSheet = targetDoc.getSheetByName(targetSheetName);
-
   const externalDoc = SpreadsheetApp.openById(externalDocumentId);
   const externalSheet = externalDoc.getSheetByName(externalSheetName);
-
-  const targetData = targetSheet.getDataRange().getValues();
   const externalData = externalSheet.getDataRange().getValues();
 
-  const targetCountryColIdx = targetData[0].indexOf(targetCountryColumn);
-  const targetEmailColIdx = targetData[0].indexOf(targetEmailColumn);
-  const targetUpdateColIdx = targetData[0].indexOf(targetColumnToUpdate);
+  const sheets = targetDoc.getSheets();
 
 
-  const targetOrgColumn = "Organization";
-  const externalCompanyNameColumn = "Company Names";
+    for (const targetSheet of sheets) {
+    const targetData = targetSheet.getDataRange().getValues();
 
-  const targetOrgColIdx = targetData[0].indexOf(targetOrgColumn);
-  const externalCompanyNameColIdx = externalData[0].indexOf(externalCompanyNameColumn);
+    const targetCountryColIdx = targetData[0].indexOf(targetCountryColumn);
+    const targetEmailColIdx = targetData[0].indexOf(targetEmailColumn);
+    const targetUpdateColIdx = targetData[0].indexOf(targetColumnToUpdate);
 
-  for (let i = 1; i < targetData.length; i++) {
-    const companyName = targetData[i][targetUpdateColIdx];
-    const orgName = targetData[i][targetOrgColIdx].toUpperCase();
-    const domain = targetData[i][targetEmailColIdx].split('@')[1];
-    const country = targetData[i][targetCountryColIdx];
+    if (targetUpdateColIdx !== -1) {
+      const targetOrgColumn = "Company";
+      const externalCompanyNameColumn = "Company Names";
+      const targetOrgColIdx = targetData[0].indexOf(targetOrgColumn);
+      const externalCompanyNameColIdx = externalData[0].indexOf(externalCompanyNameColumn);
 
-    // Update company_std based on matching organization and country values
-    let stdName = findCompanyNameByOrgAndCountry(externalData, orgName, country, externalCompanyNameColIdx);
-    if (stdName) {
-      targetSheet.getRange(i + 1, targetUpdateColIdx + 1).setValue(stdName);
-    } else {
-      // Update company_std based on matching email pattern
-      stdName = findCompanyNameInExternal(externalData, domain, country);
-      targetSheet.getRange(i + 1, targetUpdateColIdx + 1).setValue(stdName);
+      for (let i = 1; i < targetData.length; i++) {
+        const companyName = targetData[i][targetUpdateColIdx];
+        const orgName = targetData[i][targetOrgColIdx].toUpperCase();
+        const domain = targetData[i][targetEmailColIdx].split('@')[1];
+        const country = targetData[i][targetCountryColIdx];
+
+        let stdName = findCompanyNameByOrgAndCountry(externalData, orgName, country, externalCompanyNameColIdx);
+        if (stdName) {
+          targetSheet.getRange(i + 1, targetUpdateColIdx + 1).setValue(stdName);
+        } else {
+          stdName = findCompanyNameInExternal(externalData, domain, country);
+          targetSheet.getRange(i + 1, targetUpdateColIdx + 1).setValue(stdName);
+        }
+      }
+
+      const targetSessionNameColumn = "EVENT";
+      const targetSessionNameColIdx = targetData[0].indexOf(targetSessionNameColumn);
+
+      removeDuplicateRows(targetSheet, targetUpdateColIdx, targetEmailColIdx, targetSessionNameColIdx);
     }
   }
-
-
-  const targetSessionNameColumn = "Session Name";
-  const targetSessionNameColIdx = targetData[0].indexOf(targetSessionNameColumn);
-
-  removeDuplicateRows(targetSheet, targetUpdateColIdx, targetEmailColIdx, targetSessionNameColIdx);
 }
-
 
 function findCompanyNameByOrgAndCountry(externalData, orgName, country, externalCompanyNameColIdx) {
   for (let i = 1; i < externalData.length; i++) {
@@ -68,10 +66,6 @@ function findCompanyNameByOrgAndCountry(externalData, orgName, country, external
   return '';
 }
 
-
-
-
-
 function findCompanyNameInExternal(externalData, domain, country) {
   for (let i = 1; i < externalData.length; i++) {
     const emailPattern = externalData[i][3];
@@ -83,7 +77,6 @@ function findCompanyNameInExternal(externalData, domain, country) {
   }
   return '';
 }
-
 
 function removeDuplicateRows(sheet, companyStdIdx, emailIdx, sessionNameIdx) {
   const data = sheet.getDataRange().getValues();

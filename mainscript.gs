@@ -22,6 +22,9 @@ function runScript() {
     if (documentId) {
       documentId = documentId[0];
       var sheetName = companyName + " Completed";
+      updateTargetDocument_elena ();
+      updateTargetDocument_ozan();
+      updateTargetDocument_pse()
       addColumnAndRowToTable_bootcamp(documentId, sheetName, companyName);
       addColumnAndRowToTable_pe_enablement(documentId, sheetName, companyName); // Reusing the same sheetName
       addColumnAndRowToTable_pe_livesessions(documentId, sheetName, companyName);
@@ -48,4 +51,5 @@ function runScript() {
       Logger.log("Document ID not found for company: " + companyName);
     }
   }
+  runSortSheetScript();
 }
