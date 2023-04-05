@@ -1,6 +1,6 @@
 function CreateTrainingDataForPartners() {
-  const reportid = ''; // Id for the Master Training report
-  const configSSId = ''; // This is the Id for the spreadsheet that keeps track of the focus partners, their reports and name mappings
+  const reportid = '1j80iS_inFjdZhY-c5df9P12lFF_35d2c01t9X08PWTM'; // Id for the Master Training report
+  const configSSId = '1YSVmDpjZxNyKzh0JnhllKzXVinZ1T5vSQx2encRSIvI'; // This is the Id for the spreadsheet that keeps track of the focus partners, their reports and name mappings
 
   // Global Variables
   var spreadsheet = SpreadsheetApp.openById(reportid); 
@@ -18,19 +18,22 @@ function CreateTrainingDataForPartners() {
     var docUrl = valuesconfig[x][y++];
     var basicUrl = docUrl.split("?")[0];
     var itemsUrl=basicUrl.split("/");
-    var docId = itemsUrl[itemsUrl.length-1];
+    if(itemsUrl[itemsUrl.length-1]==""||itemsUrl[itemsUrl.length-1]=="edit") var docId = itemsUrl[itemsUrl.length-2];
+    else var docId = itemsUrl[itemsUrl.length-1];
     var partnerRegexPattern = valuesconfig[x][y++];
-    var email = valuesconfig[x][y];
+    var emailRegexPattern = valuesconfig[x][y];
     if(partnerName==""&&docUrl==""&&partnerRegexPattern=="") break;
-    console.log("partner : " + partnerName + " docUrl : " + docUrl + " docId: " + docId + " pattern : "+partnerRegexPattern);
+    console.log("partner : " + partnerName + " docUrl : " + docUrl + " docId: " + docId + " pattern : "+partnerRegexPattern + " emailPattern : "+ emailRegexPattern);
     // TO Export More information Just follow the pattern and add values here
-    var numberOfNewSheets=2; // Adjust here if you need to add another sheet to export
-    var sheetsToExport=['Completed','Training']; //Adjust here if you need to add another sheet to export
-    var numberOfColumnsTofilter=[1,5]; //Adjust here if you need to add another sheet to export
-    var columnsToBeFiltered=['A:A','E:E']; //Adjust here if you need to add another sheet to export
+    var regexBy = ['company','company','company']; //Adjust here if you need to add another sheet to export
+    var sheetsToExport=['Completed','Training','Certification']; //Adjust here if you need to add another sheet to export
+    var numberOfColumnsTofilter=[1,5,4]; //Adjust here if you need to add another sheet to export
+    var columnsToBeFiltered=['A:A','E:E','D:D']; //Adjust here if you need to add another sheet to export
     // END
-
+    // var numberOfNewSheets=3; // Adjust here if you need to add another sheet to export
+    var numberOfNewSheets=sheetsToExport.length;
     var z=0;
+    // if(partnerName==""||docUrl==""||partnerRegexPattern==""||emailRegexPattern==""){
     if(partnerName==""||docUrl==""||partnerRegexPattern==""){
       throw new Error( "One of the fields for the partner is missing! Config File URL: https://docs.google.com/spreadsheets/d/" + configSSId + " row: "+x); 
     }
@@ -39,7 +42,8 @@ function CreateTrainingDataForPartners() {
     while(z<numberOfNewSheets){
       var existingSheet = spreadsheet.getSheetByName(sheetsToExport[z]);
       spreadsheet.setActiveSheet(existingSheet, true);
-      var selectionCriteria="=REGEXMATCH("+columnsToBeFiltered[z] +",\""+partnerRegexPattern+"\")";
+      if(regexBy[z]=='company') var selectionCriteria="=REGEXMATCH("+columnsToBeFiltered[z] +",\""+partnerRegexPattern+"\")";
+      else if(regexBy[z]=='email') var selectionCriteria="=REGEXMATCH("+columnsToBeFiltered[z] +",\""+emailRegexPattern+"\")";
       var filterForSelection = SpreadsheetApp.newFilterCriteria().whenFormulaSatisfied(selectionCriteria).build(); // Filtering the criteria
       existingSheet.getFilter().setColumnFilterCriteria(numberOfColumnsTofilter[z], filterForSelection);
       var existingData = existingSheet.getRange(1, 1, existingSheet.getMaxRows(), existingSheet.getMaxColumns());
@@ -63,6 +67,7 @@ function CreateTrainingDataForPartners() {
       }
       newSheet.copyTo(reportSpreadsheet).setName(partnerName + ' ' + sheetsToExport[z]);
       z++;
+      spreadsheet.deleteSheet(newSheet);
     }
     y=0;
   }
