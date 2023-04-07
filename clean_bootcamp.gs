@@ -1,74 +1,62 @@
-// This function updates the target sheets with data from the external sheet
-function updateTargetDocument_pse() {
-    // Set target document and column names
+// This function updates the target sheet with data from the external sheet
+function updateTargetDocument_pse_bootcamp() {
+    // Replace the placeholders with actual values
 
-    const targetDocumentId = "1YZTiXM1FWaM5bWCDa2yNQKUJYOsLgsc1AkS_blzoX1I";
-    const targetCountryColumn = "Country (text only)";
+    const targetDocumentId = "1xobRm8N8yoBrC_BSOo-VHLCTF3H_J3iBWxeCaGx0H-w";
+    const targetCountryColumn = "partner_account_country";
     const targetColumnToUpdate = "company_std";
-    const targetEmailColumn = "Email";
-    // Set external document and column names
+    const targetEmailColumn = "email";
 
     const externalDocumentId = "1_XPDO9SNw54kG7L8iUxCj6_xfTB7W38VfROEwVLr8sM";
     const externalSheetName = "companies";
     const externalStdNameColumn = "Standardized Company Name";
     const externalCountryColumn = "Country";
     const externalEmailPatternColumn = "Email_pattern";
-    // Open target and external documents and get external data
+    // Open the target and external sheets and get their data
 
     const targetDoc = SpreadsheetApp.openById(targetDocumentId);
     const externalDoc = SpreadsheetApp.openById(externalDocumentId);
     const externalSheet = externalDoc.getSheetByName(externalSheetName);
     const externalData = externalSheet.getDataRange().getValues();
-    // Get all sheets in the target document
 
     const sheets = targetDoc.getSheets();
 
-    // Iterate over all sheets in the target document
+    // Loop through all sheets in the target document
 
     for (const targetSheet of sheets) {
-        // Get data from the target sheet
-
         const targetData = targetSheet.getDataRange().getValues();
-        // Get column indices for target sheet
 
         const targetCountryColIdx = targetData[0].indexOf(targetCountryColumn);
         const targetEmailColIdx = targetData[0].indexOf(targetEmailColumn);
         const targetUpdateColIdx = targetData[0].indexOf(targetColumnToUpdate);
-        // Check if target sheet has column to update
+        // Only update the column if it exists in the sheet
 
         if (targetUpdateColIdx !== -1) {
-            // Get column names and indices for external data
-
-            const targetOrgColumn = "Company";
+            const targetOrgColumn = "partner_name";
             const externalCompanyNameColumn = "Company Names";
             const targetOrgColIdx = targetData[0].indexOf(targetOrgColumn);
             const externalCompanyNameColIdx = externalData[0].indexOf(externalCompanyNameColumn);
-            // Iterate over rows in target sheet
+            // Loop through all rows in the sheet
 
             for (let i = 1; i < targetData.length; i++) {
-                // Get relevant data for the row
-
                 const companyName = targetData[i][targetUpdateColIdx];
                 const orgName = targetData[i][targetOrgColIdx].toUpperCase();
                 const domain = targetData[i][targetEmailColIdx].split('@')[1];
                 const country = targetData[i][targetCountryColIdx];
-                // Find standardized company name based on organization and country
+                // Update company_std based on matching organization and country values
 
                 let stdName = findCompanyNameByOrgAndCountry(externalData, orgName, country, externalCompanyNameColIdx);
                 if (stdName) {
-                    // Update company_std column if a match is found
-
                     targetSheet.getRange(i + 1, targetUpdateColIdx + 1).setValue(stdName);
                 } else {
-                    // Find standardized company name based on email pattern and country
+                    // Update company_std based on matching email pattern
 
                     stdName = findCompanyNameInExternal(externalData, domain, country);
                     targetSheet.getRange(i + 1, targetUpdateColIdx + 1).setValue(stdName);
                 }
             }
-            // Get column name and index for session name
 
-            const targetSessionNameColumn = "EVENT";
+            const targetSessionNameColumn = "enablement_name";
             const targetSessionNameColIdx = targetData[0].indexOf(targetSessionNameColumn);
             // Remove duplicate rows based on company_std, email, and session name
 
@@ -78,77 +66,67 @@ function updateTargetDocument_pse() {
 }
 
 function findCompanyNameByOrgAndCountry(externalData, orgName, country, externalCompanyNameColIdx) {
-    // Iterate over rows in external data
+    // Loop through each row in the external sheet data, starting at index 1 to skip the header row.
 
     for (let i = 1; i < externalData.length; i++) {
-        // Get relevant data from external data row
+        // Get the country and company name list for the current row.
 
         const countryInExternal = externalData[i][2];
         const companyNameList = externalData[i][externalCompanyNameColIdx].toUpperCase().split(";");
-        // Check if organization and country match
+        // If the company name list includes the organization name and the country matches, return the standardized company name.
 
         if (companyNameList.includes(orgName) && countryInExternal === country) {
-            // Return standardized company name if match is found
-
             return externalData[i][0];
         }
     }
-    // Return empty string if no match is found
+    // If no match is found, return an empty string.
 
     return '';
 }
 
 function findCompanyNameInExternal(externalData, domain, country) {
-    // Iterate over rows in external data
+    // Loop through each row in the external sheet data, starting at index 1 to skip the header row.
 
     for (let i = 1; i < externalData.length; i++) {
-        // Get relevant data from external data row
+        // Get the email pattern and country for the current row.
 
         const emailPattern = externalData[i][3];
         const countryInExternal = externalData[i][2];
-        // Check if domain ends with email pattern and country matches
+        // If the email domain ends with the email pattern and the country matches, return the standardized company name.
 
         if (domain && domain.endsWith(emailPattern) && countryInExternal === country) {
-            // Return standardized company name if match is found
-
             return externalData[i][0];
         }
     }
-    // Return empty string if no match is found
+    // If no match is found, return an empty string.
 
     return '';
 }
 
 function removeDuplicateRows(sheet, companyStdIdx, emailIdx, sessionNameIdx) {
-    // Get data from the sheet
+    // Get the data from the sheet.
 
     const data = sheet.getDataRange().getValues();
-    // Create a new array with the header row
-
     const uniqueRows = [data[0]];
-    // Iterate over rows in data
+    // Loop through each row in the data, starting at index 1 to skip the header row.
 
     for (let i = 1; i < data.length; i++) {
         const row = data[i];
         const companyStd = row[companyStdIdx];
         const email = row[emailIdx];
         const sessionName = row[sessionNameIdx];
-        // Check if a row with the same values for company_std, email, and session name has already been added to the uniqueRows array
+        // Check if the row is unique based on the company standardization, email, and session name columns.
 
         if (!uniqueRows.some(uniqueRow => (
                 uniqueRow[companyStdIdx] === companyStd &&
                 uniqueRow[emailIdx] === email &&
                 uniqueRow[sessionNameIdx] === sessionName
             ))) {
-            // If the row is unique, add it to the uniqueRows array
-
             uniqueRows.push(row);
         }
     }
-    // Clear contents of sheet
+    // Clear the contents of the sheet and set the unique rows as the new values.
 
     sheet.clearContents();
-    // Set the values of the sheet to the uniqueRows array
-
     sheet.getRange(1, 1, uniqueRows.length, uniqueRows[0].length).setValues(uniqueRows);
 }
